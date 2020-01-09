@@ -54,7 +54,31 @@ def svm_loss_naive(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    # An epsilon number
+    epsilon = 1e-5
+    for r in range(W.shape[0]):
+        for c in range(W.shape[1]):
+            # Adjust a weight value by adding an epsilon (a very very small number) and then calculate gradient
+            hW = W
+            hW[r, c] = hW[r, c] + epsilon
+            for i in range(num_train):
+                hscores = X[i].dot(hW)
+                hcorrect_class_score = hscores[y[i]]
+                for j in range(num_classes):
+                    if j == y[i]:
+                        continue
+                    hmargin = hscores[j] - hcorrect_class_score + 1 # note delta = 1
+                    if hmargin > 0:
+                        dW[r, c] += hmargin
+            # Calculate an average by dividing by num_train
+            dW[r, c] /= num_train
+            # Add regularization to the lost
+            dW[r, c] += reg * np.sum(hW * hW)
+            # reset again
+            hW[r, c] = hW[r, c] - epsilon
+
+    # Finalize the derivative of the loss function
+    dW = (dW - loss) / epsilon
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     

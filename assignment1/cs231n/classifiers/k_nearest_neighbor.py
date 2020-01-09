@@ -181,7 +181,8 @@ class KNearestNeighbor(object):
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
             unique, count = np.unique(closest_y, return_counts=True)
-            y_pred[i] = np.random.choice(unique[count == count.max()], 1)
+            y_pred[i] = unique[count == count.max()][0]
+            # y_pred[i] = np.random.choice(unique[count == count.max()], 1)
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
