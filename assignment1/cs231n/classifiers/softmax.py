@@ -54,6 +54,7 @@ def softmax_loss_naive(W, X, y, reg):
 
     # to be an average so we divide by num_train
     dW /= num_train
+    dW += reg * 2 * W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -90,6 +91,7 @@ def softmax_loss_vectorized(W, X, y, reg):
     # calculate the gradient of the loss function
     scores_prob[np.arange(num_train), y] -= 1
     dW = np.dot(X.T, scores_prob) / num_train
+    dW += reg * 2 * W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
