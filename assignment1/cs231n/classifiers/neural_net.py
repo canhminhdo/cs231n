@@ -80,7 +80,9 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        fc1 = X.dot(W1) + b1    # fully connected
+        X2 = np.maximum(0, fc1) # ReLU activation function
+        scores = X2.dot(W2) + b2    # fully connected
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -90,7 +92,7 @@ class TwoLayerNet(object):
 
         # Compute the loss
         loss = None
-        #############################################################################
+        ################################################### ##########################
         # TODO: Finish the forward pass, and compute the loss. This should include  #
         # both the data loss and L2 regularization for W1 and W2. Store the result  #
         # in the variable loss, which should be a scalar. Use the Softmax           #
@@ -98,7 +100,11 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        scores_norm = scores - np.max(scores, axis=1, keepdims=True)  # avoid very large of exponential
+        scores_prob = np.exp(scores_norm) / np.sum(np.exp(scores_norm), axis=1, keepdims=True)    # softmax matrix
+        loss = np.sum(- np.log(scores_prob[np.arange(N), y]))
+        loss /= N
+        loss += reg * (np.sum(W2 * W2) + np.sum(W1 * W1))  # L2 regularization for both W1 and W2
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -111,8 +117,27 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        scores_prob[np.arange(N), y] -= 1
+        scores_prob /= N
 
+        dW2 = X2.T.dot(scores_prob)
+
+        # b2 gradient
+        db2 = scores_prob.sum(axis=0)
+
+        # W1 gradient
+        dW1 = scores_prob.dot(W2.T)
+        dfc1 = dW1 * (fc1 > 0)
+        dW1 = X.T.dot(dfc1)
+
+        # b1 gradient
+        db1 = dfc1.sum(axis=0)
+
+        # regularization gradient
+        dW1 += reg * 2 * W1
+        dW2 += reg * 2 * W2
+
+        grads = {'W1': dW1, 'b1': db1, 'W2': dW2, 'b2': db2}
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
         return loss, grads
@@ -156,7 +181,9 @@ class TwoLayerNet(object):
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-            pass
+            mini_batch = np.random.choice(num_train, batch_size)
+            X_batch = X[mini_batch]
+            y_batch = y[mini_batch]
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -172,7 +199,8 @@ class TwoLayerNet(object):
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-            pass
+            for key in self.params:
+                self.params[key] -= learning_rate * grads[key]
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -180,7 +208,7 @@ class TwoLayerNet(object):
                 print('iteration %d / %d: loss %f' % (it, num_iters, loss))
 
             # Every epoch, check train and val accuracy and decay learning rate.
-            if it % iterations_per_epoch == 0:
+            if it % iterations_pe  r_epoch == 0:
                 # Check accuracy
                 train_acc = (self.predict(X_batch) == y_batch).mean()
                 val_acc = (self.predict(X_val) == y_val).mean()
@@ -218,7 +246,7 @@ class TwoLayerNet(object):
         ###########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        y_pred = np.argmax(self.loss(X), axis=1)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
