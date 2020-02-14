@@ -208,7 +208,7 @@ class TwoLayerNet(object):
                 print('iteration %d / %d: loss %f' % (it, num_iters, loss))
 
             # Every epoch, check train and val accuracy and decay learning rate.
-            if it % iterations_pe  r_epoch == 0:
+            if it % iterations_per_epoch == 0:
                 # Check accuracy
                 train_acc = (self.predict(X_batch) == y_batch).mean()
                 val_acc = (self.predict(X_val) == y_val).mean()
