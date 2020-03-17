@@ -2,6 +2,11 @@ from __future__ import print_function
 import numpy as np
 import torch
 import torch.nn as nn
+
+# add more here
+import pyximport
+pyximport.install()
+
 try:
     from cs231n.im2col_cython import col2im_cython, im2col_cython
     from cs231n.im2col_cython import col2im_6d_cython

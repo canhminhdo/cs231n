@@ -103,3 +103,46 @@ def conv_relu_pool_backward(dout, cache):
     da = relu_backward(ds, relu_cache)
     dx, dw, db = conv_backward_fast(da, conv_cache)
     return dx, dw, db
+
+def affine_norm_relu_forward(x,w,b, gamma, beta, bn_params, normalization, dropout, dropout_param):
+    """
+    forward pass for the affine-[batch/layer norm]-relu-[dropout] convenience layer
+    """
+    # affine - [batch/layer norm] - ReLU - [Dropout]
+    norm_cache, drop_cache = None, None
+    # affine layer
+    out, fc_cache = affine_forward(x, w, b)
+    # batch/layer normalization
+    if normalization == 'batchnorm':
+        out, norm_cache = batchnorm_forward(out, gamma, beta, bn_params)
+    elif normalization == 'layernorm':
+        out, norm_cache = layernorm_forward(out, gamma, beta, bn_params)
+    # ReLU
+    out, relu_cache = relu_forward(out)
+    # Dropout
+    if dropout:
+        out, drop_cache = dropout_forward(out, self.dropout_param)
+
+    cache = (fc_cache, norm_cache, relu_cache, drop_cache)
+    return out, cache
+
+def affine_norm_relu_backward(dout, cache, normalization, dropout):
+    """
+        backword pass for the affine-[batch/layer norm]-relu-[dropout] convenience layer
+    """
+    # affine - [batch/layer norm] - ReLU - [Dropout]
+    fc_cache, norm_cache, relu_cache, drop_cache = cache
+    # dropout
+    if dropout:
+        dout = dropout_backward(dout, drop_cache)
+    # relu
+    dout = relu_backward(dout, relu_cache)
+    # batch/layer normalization
+    dgamma, dbeta = None, None
+    if normalization == 'batchnorm':
+        dout, dgamma, dbeta = batchnorm_backward_alt(dout, norm_cache)
+    elif normalization == 'layernorm':
+        dout, dgamma, dbeta = layernorm_backward(dout, norm_cache)
+    # affine layer
+    dx, dw, db = affine_backward(dout, fc_cache)
+    return dx, dw, db, dgamma, dbeta

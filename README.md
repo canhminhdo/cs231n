@@ -13,7 +13,7 @@ Find course notes and assignments [here](http://cs231n.github.io) and be sure to
 - [Q5](https://github.com/minhcanh99/cs231n/blob/master/assignment1/features.ipynb): Higher Level Representations: Image Features. (_Done_)
 
 ### Assignment 2:
-- [Q1](https://github.com/minhcanh99/cs231n/blob/master/assignment2/FullyConnectedNets.ipynb): Fully-connected Neural Network. (_Not yet_)
+- [Q1](https://github.com/minhcanh99/cs231n/blob/master/assignment2/FullyConnectedNets.ipynb): Fully-connected Neural Network. (_Done_)
 - [Q2](https://github.com/minhcanh99/cs231n/blob/master/assignment2/BatchNormalization.ipynb): Batch Normalization. (_Not yet_)
 - [Q3](https://github.com/minhcanh99/cs231n/blob/master/assignment2/Dropout.ipynb): Dropout. (_Not yet_)
 - [Q4](https://github.com/minhcanh99/cs231n/blob/master/assignment2/ConvolutionalNetworks.ipynb): Convolutional Networks. (_Not yet_)
