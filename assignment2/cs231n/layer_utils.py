@@ -121,7 +121,7 @@ def affine_norm_relu_forward(x,w,b, gamma, beta, bn_params, normalization, dropo
     out, relu_cache = relu_forward(out)
     # Dropout
     if dropout:
-        out, drop_cache = dropout_forward(out, self.dropout_param)
+        out, drop_cache = dropout_forward(out, dropout_param)
 
     cache = (fc_cache, norm_cache, relu_cache, drop_cache)
     return out, cache
