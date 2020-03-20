@@ -176,6 +176,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
     mode = bn_param['mode']
     eps = bn_param.get('eps', 1e-5)
     momentum = bn_param.get('momentum', 0.9)
+    layernorm = bn_param.get('layernorm', 0)
 
     N, D = x.shape
     running_mean = bn_param.get('running_mean', np.zeros(D, dtype=x.dtype))
@@ -212,10 +213,11 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         z = (x - mu) / std
         out = gamma * z + beta
 
-        running_mean = momentum * running_mean + (1 - momentum) * mu
-        running_var = momentum * running_var + (1 - momentum) * (std**2)
+        if layernorm == 0:
+            running_mean = momentum * running_mean + (1 - momentum) * mu
+            running_var = momentum * running_var + (1 - momentum) * (std**2)
 
-        cache = (x, mu, var, std, z, gamma, beta)
+        cache = (x, mu, var, std, z, gamma, beta, layernorm)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -272,7 +274,7 @@ def batchnorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    x, mu, var, std, z, gamma, beta = cache
+    x, mu, var, std, z, gamma, beta, layernorm = cache
 
     # dx gradient
     N, D = dout.shape
@@ -287,10 +289,10 @@ def batchnorm_backward(dout, cache):
     dx = dfdz * dzdx + np.sum(dfdz * dzdu, axis=0) * dudx + np.sum(dfdz * dzdv, axis=0)*(dvdx + dvdu * dudx)
 
     # gama gradient
-    dgamma = np.sum(dout * z, axis=0)
+    dgamma = np.sum(dout * z, axis=layernorm)
 
     # beta gradient
-    dbeta = dout.sum(axis=0)
+    dbeta = dout.sum(axis=layernorm)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -325,7 +327,7 @@ def batchnorm_backward_alt(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    x, mu, var, std, z, gamma, beta = cache
+    x, mu, var, std, z, gamma, beta, layernorm = cache
 
     # references: https://kevinzakka.github.io/2016/09/14/batch_normalization/
     # dx gradient
@@ -335,10 +337,10 @@ def batchnorm_backward_alt(dout, cache):
     dx /= std
 
     # gama gradient
-    dgamma = np.sum(dout * z, axis=0)
+    dgamma = np.sum(dout * z, axis=layernorm)
 
     # beta gradient
-    dbeta = dout.sum(axis=0)
+    dbeta = dout.sum(axis=layernorm)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -385,6 +387,7 @@ def layernorm_forward(x, gamma, beta, ln_param):
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
     ln_param['mode'] = 'train'
+    ln_param['layernorm'] = 1
     # transpose x, gamma, reshape
     out, cache = batchnorm_forward(x.T, gamma.reshape(-1, 1), beta.reshape(-1, 1), ln_param)
     # transpose output to get original dims
@@ -424,6 +427,7 @@ def layernorm_backward(dout, cache):
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
     # transpose dout because we transposed original input x in forward call
+
     dx, dgamma, dbeta = batchnorm_backward_alt(dout.T, cache)
     # transpose gradients w.r.t input x to original dims
     dx = dx.T
