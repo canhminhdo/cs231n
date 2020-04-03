@@ -569,7 +569,29 @@ def conv_forward_naive(x, w, b, conv_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N, C, H, W = x.shape
+    F, C, HH, WW = w.shape
+
+    pad = conv_param.get('pad', 0)
+    stride = conv_param.get('stride', 1)
+    x_pad = np.pad(x, ((0, 0), (0, 0), (pad, pad), (pad, pad)))
+
+    assert (H + 2 * pad - HH) % stride == 0
+    assert (W + 2 * pad - WW) % stride == 0
+
+    outH = int(1 + (H + 2 * pad - HH) / stride)
+    outW = int(1 + (W + 2 * pad - WW) / stride)
+    out = np.zeros((N, F, outH, outW))
+
+    for i in range(N):
+        for j in range(F):
+            for m in range(outH):
+                for n in range(outW):
+                    w_start = n * stride
+                    w_stop = w_start + WW
+                    h_start = m * stride
+                    h_stop = h_start + HH
+                    out[i][j][m][n] = np.sum(x_pad[i, :, h_start:h_stop, w_start:w_stop] * w[j]) + b[j]
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -598,7 +620,35 @@ def conv_backward_naive(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x, w, b, conv_param = cache
+    N, C, H, W = x.shape
+    F, C, HH, WW = w.shape
+    pad = conv_param.get('pad', 0)
+    stride = conv_param.get('stride', 1)
+    x_pad = np.pad(x, ((0, 0), (0, 0), (pad, pad), (pad, pad)))
+
+    # shape of dout
+    N, F, outH, outW = dout.shape
+
+    # x gradient and w gradient
+    dw = np.zeros(w.shape)
+    dx_pad = np.zeros(x_pad.shape)
+    for i in range(N):
+        for j in range(F):
+            for m in range(outH):
+                for n in range(outW):
+                    w_start = n * stride
+                    w_stop = w_start + WW
+                    h_start = m * stride
+                    h_stop = h_start + HH
+                    dw[j] += dout[i][j][m][n] * x_pad[i, :, h_start:h_stop, w_start:w_stop]
+                    dx_pad[i, :, h_start:h_stop, w_start:w_stop] += dout[i][j][m][n] * w[j]
+    dx = dx_pad[:, :, pad:(H+pad), pad:(W+pad)]
+
+    # b gradient
+    db = np.zeros(b.shape)
+    for i in range(F):
+        db[i] = np.sum(dout[:, i])
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
