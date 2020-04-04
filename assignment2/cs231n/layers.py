@@ -655,7 +655,6 @@ def conv_backward_naive(dout, cache):
     #                             END OF YOUR CODE                            #
     ###########################################################################
     return dx, dw, db
-;
 
 def max_pool_forward_naive(x, pool_param):
     """
