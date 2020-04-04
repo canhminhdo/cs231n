@@ -16,7 +16,7 @@ Find course notes and assignments [here](http://cs231n.github.io) and be sure to
 - [Q1](https://github.com/minhcanh99/cs231n/blob/master/assignment2/FullyConnectedNets.ipynb): Fully-connected Neural Network. (_Done_)
 - [Q2](https://github.com/minhcanh99/cs231n/blob/master/assignment2/BatchNormalization.ipynb): Batch Normalization. (_Done_)
 - [Q3](https://github.com/minhcanh99/cs231n/blob/master/assignment2/Dropout.ipynb): Dropout. (_Done_)
-- [Q4](https://github.com/minhcanh99/cs231n/blob/master/assignment2/ConvolutionalNetworks.ipynb): Convolutional Networks. (_Not yet_)
+- [Q4](https://github.com/minhcanh99/cs231n/blob/master/assignment2/ConvolutionalNetworks.ipynb): Convolutional Networks. (_Done_)
 - [Q5](https://github.com/minhcanh99/cs231n/blob/master/assignment2/TensorFlow.ipynb): PyTorch / TensorFlow on CIFAR-10. (_Not yet_)
 
 ### Assignment 3:
