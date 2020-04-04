@@ -655,7 +655,7 @@ def conv_backward_naive(dout, cache):
     #                             END OF YOUR CODE                            #
     ###########################################################################
     return dx, dw, db
-
+;
 
 def max_pool_forward_naive(x, pool_param):
     """
@@ -682,7 +682,27 @@ def max_pool_forward_naive(x, pool_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    pool_height = pool_param.get('pool_height', 2)
+    pool_width = pool_param.get('pool_width', 2)
+    stride = pool_param.get('stride', 2)
+    N, C, H, W = x.shape
+
+    assert (H - pool_height) % stride == 0
+    assert (W - pool_width) % stride == 0
+
+    outH = 1 + (H - pool_height) // stride
+    outW = 1 + (W - pool_width) // stride
+
+    out = np.zeros((N, C, outH, outW))
+
+    for i in range(N):
+            for m in range(outH):
+                for n in range(outW):
+                    w_start = n * stride
+                    w_stop = w_start + pool_width
+                    h_start = m * stride
+                    h_stop = h_start + pool_height
+                    out[i, :, m, n] = np.max(np.max(x[i, :, h_start:h_stop, w_start:w_stop], axis=1), axis=1).reshape(C)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -709,7 +729,30 @@ def max_pool_backward_naive(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x, pool_param = cache
+    pool_height = pool_param.get('pool_height', 2)
+    pool_width = pool_param.get('pool_width', 2)
+    stride = pool_param.get('stride', 2)
+    N, C, H, W = x.shape
+
+    # shape of dout
+    N, F, outH, outW = dout.shape
+
+    # x gradient
+    dx = np.zeros(x.shape)
+    for i in range(N):
+        for j in range(C):
+            for m in range(outH):
+                for n in range(outW):
+                    w_start = n * stride
+                    w_stop = w_start + pool_width
+                    h_start = m * stride
+                    h_stop = h_start + pool_height
+                    # calculate indices of max value
+                    indices = np.zeros((pool_height, pool_width))
+                    index = np.unravel_index(np.argmax(x[i, j, h_start:h_stop, w_start:w_stop]), (pool_height, pool_width))
+                    indices[index[0], index[1]] = 1
+                    dx[i, j, h_start:h_stop, w_start:w_stop] += indices * dout[i, j, m, n]
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -751,7 +794,10 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N, C, H, W = x.shape
+    x = x.transpose(0, 2, 3, 1).reshape(N * H * W, C)
+    out, cache = batchnorm_forward(x, gamma, beta, bn_param)
+    out = out.reshape(N, H, W, C).transpose(0, 3, 1, 2)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -785,7 +831,10 @@ def spatial_batchnorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N, C, H, W = dout.shape
+    dout = dout.transpose(0, 2, 3, 1).reshape(N * H * W, C)
+    dx, dgamma, dbeta = batchnorm_backward_alt(dout, cache)
+    dx = dx.reshape(N, H, W, C).transpose(0, 3, 1, 2)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -825,7 +874,19 @@ def spatial_groupnorm_forward(x, gamma, beta, G, gn_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N, C, H, W = x.shape
+    size = (N * G, C // G * H * W)
+    x = x.reshape(size).T
+    gamma = gamma.reshape(1, C, 1, 1)
+    beta = beta.reshape(1, C, 1, 1)
+    # similar to batch normalization
+    mu = x.mean(axis=0)
+    var = x.var(axis=0) + eps
+    std = np.sqrt(var)
+    z = (x - mu) / std
+    z = z.T.reshape(N, C, H, W)
+    out = gamma * z + beta
+    cache = (x, mu, var, std, z, gamma, beta, size)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -855,7 +916,24 @@ def spatial_groupnorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N, C, H, W = dout.shape
+    x, mu, var, std, z, gamma, beta, size = cache
+
+    # dbeta gradient
+    dbeta = dout.sum(axis=(0, 2, 3), keepdims=True)
+
+    # dgamma gradient
+    dgamma = np.sum(dout * z, axis=(0, 2, 3), keepdims=True)
+
+    # dx gradient
+    # reshape
+    z = z.reshape(size).T   #   (C // G * H * W) * (N*C)
+    M = z.shape[0]
+    dfdz = dout * gamma
+    dfdz = dfdz.reshape(size).T
+    dx = dfdz - np.sum(dfdz, axis=0) / M - np.sum(dfdz * z, axis=0) * z / M
+    dx /= std
+    dx = dx.T.reshape(N, C, H, W)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
