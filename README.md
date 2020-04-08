@@ -17,7 +17,7 @@ Find course notes and assignments [here](http://cs231n.github.io) and be sure to
 - [Q2](https://github.com/minhcanh99/cs231n/blob/master/assignment2/BatchNormalization.ipynb): Batch Normalization. (_Done_)
 - [Q3](https://github.com/minhcanh99/cs231n/blob/master/assignment2/Dropout.ipynb): Dropout. (_Done_)
 - [Q4](https://github.com/minhcanh99/cs231n/blob/master/assignment2/ConvolutionalNetworks.ipynb): Convolutional Networks. (_Done_)
-- [Q5](https://github.com/minhcanh99/cs231n/blob/master/assignment2/TensorFlow.ipynb): PyTorch / TensorFlow on CIFAR-10. (_Not yet_)
+- [Q5](https://github.com/minhcanh99/cs231n/blob/master/assignment2/TensorFlow.ipynb): PyTorch / TensorFlow on CIFAR-10. (_Done_)
 
 ### Assignment 3:
 - [Q1](https://github.com/minhcanh99/cs231n/blob/master/assignment3/RNN_Captioning.ipynb): Image Captioning with Vanilla RNNs. (_Not yet_)
