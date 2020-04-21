@@ -142,7 +142,50 @@ class CaptioningRNN(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        """
+        N : size of minibatches
+        D : input vector size of image features
+        V : vocabulary size
+        T : length of working sequence
+        H : RNN hidden dimension
+        W : dimension of word vectors.
+        """
+
+        # (1) initial hidden state
+        # transform image features to initial hidden state
+        h0 = features.dot(W_proj) + b_proj      # [N,D] * [D,H] + [H,] = [N,H]
+
+        # (2) Use a word embedding layer
+        x, cache_we = word_embedding_forward(captions_in, W_embed)   # ([N, T - 1], [V, W]) -> [N, T - 1, W]
+
+        # (3) using a vanilla RNN
+        h, cache = None, None
+        if self.cell_type == 'rnn':
+            h, cache_rnn = rnn_forward(x, h0, Wx, Wh, b)
+        else:
+            pass
+
+        # (4) affine transformation
+        out, cache_voc = temporal_affine_forward(h, W_vocab, b_vocab)     # ([N, T, H], [H, V], [V,]) -> [N, T, V]
+
+        # (5) compute scores over the vocabulary at every timestep
+        loss, dout = temporal_softmax_loss(out, captions_out, mask, verbose=False)
+
+        # gradients
+        dh, dW_vocab, db_vocab = temporal_affine_backward(dout, cache_voc)
+        if self.cell_type == 'rnn':
+            dx, dh0, dWx, dWh, db = rnn_backward(dh, cache_rnn)
+        else:
+            pass
+
+        dW_embed = word_embedding_backward(dx, cache_we)
+        dW_proj = features.T.dot(dh0)
+        db_proj = dh0.sum(axis=0)
+
+        grads = {
+            'W_vocab': dW_vocab, 'b_vocab': db_vocab, 'Wx': dWx, 'Wh': dWh,
+            'b': db, 'W_embed': dW_embed, 'W_proj': dW_proj, 'b_proj': db_proj
+        }
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -211,7 +254,20 @@ class CaptioningRNN(object):
         ###########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        captions[:, 0] = self._start
+        h0 = features.dot(W_proj) + b_proj
+        if self.cell_type == 'rnn':
+            for i in range(max_length):
+                x, cache_we = word_embedding_forward(captions[:, i], W_embed)
+                h0, cache_rnn = rnn_step_forward(x, h0, Wx, Wh, b)
+                next_h = h0.reshape((h0.shape[0], 1, h0.shape[1]))
+                out_temp, cache_voc = temporal_affine_forward(next_h, W_vocab, b_vocab)
+                out = out_temp.reshape((out_temp.shape[0], -1))
+                if i < max_length - 1:
+                    captions[:, i + 1] = out.argmax(axis=1)
+        else:
+            pass
+
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################

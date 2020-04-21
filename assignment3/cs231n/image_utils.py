@@ -5,7 +5,13 @@ from builtins import range
 import urllib.request, urllib.error, urllib.parse, os, tempfile
 
 import numpy as np
-from scipy.misc import imread, imresize
+# @deprecated
+# removed in 1.3.0
+# imread -> using imageio
+# imresize -> using
+# from scipy.misc import imread, imresize
+import imageio
+from PIL import Image
 
 """
 Utility functions used for viewing and processing images.
@@ -63,7 +69,7 @@ def image_from_url(url):
         _, fname = tempfile.mkstemp()
         with open(fname, 'wb') as ff:
             ff.write(f.read())
-        img = imread(fname)
+        img = imageio.imread(fname)
         os.remove(fname)
         return img
     except urllib.error.URLError as e:
@@ -79,11 +85,11 @@ def load_image(filename, size=None):
     - filename: path to file
     - size: size of shortest dimension after rescaling
     """
-    img = imread(filename)
+    img = imageio.imread(filename)
     if size is not None:
         orig_shape = np.array(img.shape[:2])
         min_idx = np.argmin(orig_shape)
         scale_factor = float(size) / orig_shape[min_idx]
         new_shape = (orig_shape * scale_factor).astype(int)
-        img = imresize(img, scale_factor)
+        img = Image.fromarray(img).resize(scale_factor)
     return img
