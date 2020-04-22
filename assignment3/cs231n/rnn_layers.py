@@ -288,7 +288,16 @@ def lstm_step_forward(x, prev_h, prev_c, Wx, Wh, b):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    H = prev_h.shape[1]
+    # activation function
+    h = x.dot(Wx) + prev_h.dot(Wh) + b      # [Nx4H]
+    h[:, :3*H] = sigmoid(h[:, :3*H])
+    h[:, 3*H:] = np.tanh(h[:, 3*H:])
+    i, f, o, g = h[:, :H], h[:, H:2*H], h[:, 2*H:3*H], h[:, 3*H:]
+    next_c = f * prev_c + i * g             # [NxH]
+    next_c_tanh = np.tanh(next_c)           # [NxH]
+    next_h = o * next_c_tanh                # [NxH]
+    cache = (x, prev_h, prev_c, Wx, Wh, b, h, next_c_tanh)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
@@ -324,7 +333,34 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N, H = dnext_h.shape
+    x, prev_h, prev_c, Wx, Wh, b, h, next_c_tanh = cache
+    i, f, o, g = h[:, :H], h[:, H:2 * H], h[:, 2 * H:3 * H], h[:, 3 * H:4 * H]
+
+    # dgate contains gradients w.r.t. each gate
+    dgate = h.copy()
+
+    # local sigmoid gradient
+    dgate[:, :3 * H] = dgate[:, :3 * H] * (1 - dgate[:, :3 * H])
+
+    # local tanh gradient
+    dgate[:, 3 * H:4 * H] = 1 - dgate[:, 3 * H:4 * H] ** 2
+    dnc_tanh = 1 - next_c_tanh ** 2
+
+    # calculate gradients in common
+    dnc_prod = dnext_h * o * dnc_tanh + dnext_c
+    dgate[:, :H] *= dnc_prod * g
+    dgate[:, H:2 * H] *= dnc_prod * prev_c
+    dgate[:, 2 * H:3 * H] *= dnext_h * next_c_tanh
+    dgate[:, 3 * H:4 * H] *= dnc_prod * i
+
+    # calculate final gradients
+    dx = dgate.dot(Wx.T)
+    dprev_h = dgate.dot(Wh.T)
+    dprev_c = dnext_c * f + dnext_h * o * dnc_tanh * f
+    dWx = x.T.dot(dgate)
+    dWh = prev_h.T.dot(dgate)
+    db = dgate.sum(axis=0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
@@ -363,7 +399,16 @@ def lstm_forward(x, h0, Wx, Wh, b):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N, T, D = x.shape
+    H = h0.shape[1]
+    prev_h = h0
+    prev_c = np.zeros(h0.shape)
+    h = np.zeros((N, T, H))  # do not save the initial hidden state
+    cache = []
+    for i in range(T):
+        prev_h, prev_c, cache_hc = lstm_step_forward(x[:, i, :], prev_h, prev_c, Wx, Wh, b)
+        h[:, i, :] = prev_h
+        cache.append(cache_hc)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
@@ -395,7 +440,20 @@ def lstm_backward(dh, cache):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N, T, H = dh.shape
+    dnext_c = np.zeros((N, H))  # because the loss function does not calculate on the last cell state.
+    dxl, dprev_h, dprev_c, dWx, dWh, db = lstm_step_backward(dh[:, T - 1, :], dnext_c, cache[T - 1])
+    D = dxl.shape[1]
+    dx = np.zeros((N, T, D))
+    dx[:, T - 1, :] = dxl
+    for i in range(T - 2, -1, -1):
+        dxc, dprev_hc, dprev_c, dWxc, dWhc, dbc = lstm_step_backward(dh[:, i, :] + dprev_h, dprev_c, cache[i])
+        dx[:, i, :] = dxc
+        dprev_h = dprev_hc
+        dWx += dWxc
+        dWh += dWhc
+        db += dbc
+    dh0 = dprev_h
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################

@@ -163,7 +163,8 @@ class CaptioningRNN(object):
         if self.cell_type == 'rnn':
             h, cache_rnn = rnn_forward(x, h0, Wx, Wh, b)
         else:
-            pass
+            # lstm
+            h, cache_lstm = lstm_forward(x, h0, Wx, Wh, b)
 
         # (4) affine transformation
         out, cache_voc = temporal_affine_forward(h, W_vocab, b_vocab)     # ([N, T, H], [H, V], [V,]) -> [N, T, V]
@@ -176,7 +177,7 @@ class CaptioningRNN(object):
         if self.cell_type == 'rnn':
             dx, dh0, dWx, dWh, db = rnn_backward(dh, cache_rnn)
         else:
-            pass
+            dx, dh0, dWx, dWh, db = lstm_backward(dh, cache_lstm)
 
         dW_embed = word_embedding_backward(dx, cache_we)
         dW_proj = features.T.dot(dh0)
@@ -256,18 +257,18 @@ class CaptioningRNN(object):
 
         captions[:, 0] = self._start
         h0 = features.dot(W_proj) + b_proj
-        if self.cell_type == 'rnn':
-            for i in range(max_length):
-                x, cache_we = word_embedding_forward(captions[:, i], W_embed)
+        prev_c = np.zeros(h0.shape)
+        for i in range(max_length):
+            x, cache_we = word_embedding_forward(captions[:, i], W_embed)
+            if self.cell_type == 'rnn':
                 h0, cache_rnn = rnn_step_forward(x, h0, Wx, Wh, b)
-                next_h = h0.reshape((h0.shape[0], 1, h0.shape[1]))
-                out_temp, cache_voc = temporal_affine_forward(next_h, W_vocab, b_vocab)
-                out = out_temp.reshape((out_temp.shape[0], -1))
-                if i < max_length - 1:
-                    captions[:, i + 1] = out.argmax(axis=1)
-        else:
-            pass
-
+            else:
+                h0, prev_c, _ = lstm_step_forward(x, h0, prev_c, Wx, Wh, b)
+            next_h = h0.reshape((h0.shape[0], 1, h0.shape[1]))
+            out_temp, cache_voc = temporal_affine_forward(next_h, W_vocab, b_vocab)
+            out = out_temp.reshape((out_temp.shape[0], -1))
+            if i < max_length - 1:
+                captions[:, i + 1] = out.argmax(axis=1)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
